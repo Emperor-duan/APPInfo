@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="cn.appsys.dao.datadictionary.DataDictionaryMapper">
+	<select id="app" resultType="DataDictionary">
+		select * from data_dictionary where typeName = "APP状态"
+	</select>
+	
+	<select id="pingtai" resultType="DataDictionary">
+		select * from data_dictionary where typeName = "所属平台" 
+	</select>
+</mapper>
