@@ -26,4 +26,22 @@ public class AppInfoServiceImpl implements AppInfoService {
 		return appInfoMapper.count(softwareName, categoryLevel1, categoryLevel2, categoryLevel3, status, flatformId);
 	}
 
+	@Override
+	public boolean insAppInfo(AppInfo appInfo) {
+		boolean flag = false;
+		if (appInfoMapper.insAppInfo(appInfo)>0) {
+			flag = true;
+		}
+		return flag;
+	}
+
+	@Override
+	public boolean APKNameexsit(String APKName) {
+		boolean flag = true;
+		if (appInfoMapper.APKNameexsit(APKName)!=null) {
+			flag = false;
+		}
+		return flag;
+	}
+
 }

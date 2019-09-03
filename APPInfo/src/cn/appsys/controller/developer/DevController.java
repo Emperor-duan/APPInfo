@@ -1,22 +1,33 @@
 package cn.appsys.controller.developer;
 
+import java.io.File;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import org.apache.catalina.User;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.math.RandomUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.alibaba.fastjson.JSON;
 
 import cn.appsys.pojo.AppCategory;
 import cn.appsys.pojo.AppInfo;
 import cn.appsys.pojo.DataDictionary;
+import cn.appsys.pojo.DevUser;
 import cn.appsys.service.appcategory.AppCategoryService;
 import cn.appsys.service.appinfo.AppInfoService;
 import cn.appsys.service.datadictionary.DataDictionaryService;
@@ -82,7 +93,7 @@ public class DevController {
 		}else if (currentPageNo>totalpageCount) {
 			currentPageNo = totalpageCount;
 		}
-		List<AppInfo> appInfolist = appInfoService.getAppInfoList(querySoftwareName, _queryCategoryLevel1, _queryCategoryLevel2, _queryCategoryLevel3, _queryStatus, _queryFlatformId, currentPageNo, page.getPageSize());
+		List<AppInfo> appInfolist = appInfoService.getAppInfoList(querySoftwareName, _queryCategoryLevel1, _queryCategoryLevel2, _queryCategoryLevel3, _queryStatus, _queryFlatformId, (currentPageNo - 1) * page.getPageSize(), page.getPageSize());
 		List<AppCategory> appCategorielist = appCategoryService.level1();
 		List<DataDictionary> statuslist = dataDictionaryService.app();
 		List<DataDictionary> flatFormlist = dataDictionaryService.pingtai();
@@ -103,8 +114,10 @@ public class DevController {
 	@RequestMapping(value="/flatform/app/categorylevellist",method=RequestMethod.GET)
 	@ResponseBody
 	public Object categorylevellist(@RequestParam(value="pid")String pid){
-		System.err.println("ddddddddddddddddddd");
-		if (pid.equals("1")&&pid.equals("2")) {
+		if (pid.equals("")) {
+			List<AppCategory> appCategorielist = appCategoryService.level1();
+			return JSON.toJSONString(appCategorielist);
+		}else if (pid.equals("1")&&pid.equals("2")) {
 			List<AppCategory> appCategorielist = appCategoryService.level2(Integer.parseInt(pid));
 			return JSON.toJSONString(appCategorielist);
 		}else {
@@ -112,4 +125,75 @@ public class DevController {
 			return JSON.toJSONString(appCategorielist);
 		}
 	}
+	
+	@RequestMapping(value="/flatform/app/appinfoadd")
+	public String addHtml(){
+		return "/developer/appinfoadd";
+	}
+	
+	@RequestMapping(value="/flatform/app/datadictionarylist")
+	@ResponseBody
+	public Object datadictionarylist(@RequestParam(value="tcode")String tcode){
+		List<DataDictionary> dataDictionarielist = dataDictionaryService.pingtai();
+		return JSON.toJSONString(dataDictionarielist);
+	}
+	
+	@RequestMapping(value="/flatform/app/appinfoaddsave")
+	public String appinfoaddsave(AppInfo appInfo,HttpSession session,
+			HttpServletRequest request,
+			@RequestParam(value="a_logoPicPath",required=false) MultipartFile attach){
+		String logoPicPath=null;
+		if (!attach.isEmpty()) {
+			String path = request.getSession().getServletContext().getRealPath("statics" + File.separator + "uploadfiles");
+			String oldFileName = attach.getOriginalFilename();
+			String prefix = FilenameUtils.getExtension(oldFileName);
+			int filesize = 500000;
+			if (attach.getSize()>filesize) {
+				request.setAttribute("fileUploadError", "上传大小不能超过500KB");
+				return "/flatform/app/appinfoadd";
+			}else if (prefix.equalsIgnoreCase("jpg")||prefix.equalsIgnoreCase("png")||prefix.equalsIgnoreCase("jpeg")||prefix.equalsIgnoreCase("pneg")) {
+				String fileName = System.currentTimeMillis() + RandomUtils.nextInt(1000000) + "_Personal.jpg";
+				File targetFile = new File(path,fileName);
+				if (!targetFile.exists()) {
+					targetFile.mkdirs();
+				}
+				
+				try {
+					attach.transferTo(targetFile);
+				} catch (Exception e) {
+					e.printStackTrace();
+					request.setAttribute("fileUploadError", "文件上传失败！");
+					return "/flatform/app/appinfoadd";
+				}
+				logoPicPath = path + File.separator + fileName;
+			}else {
+				request.setAttribute("fileUploadError", "文件格式不正确！");
+				return "/flatform/app/appinfoadd";
+			}
+		}
+		appInfo.setCreatedBy(((DevUser)session.getAttribute("devUserSession")).getId());
+		appInfo.setCreationDate(new Date());
+		appInfo.setLogoPicPath(logoPicPath);
+		if (appInfoService.insAppInfo(appInfo)) {
+			return "redirect:/dev/flatform/app/list";
+		}
+		return "/flatform/app/appinfoadd";
+	}
+	
+	@RequestMapping(value="/flatform/app/apkexist",method=RequestMethod.GET)
+	@ResponseBody
+	public Object apkexist(@RequestParam(value="APKName")String apkName){
+		HashMap<String , Object> APKNameMap = new  HashMap<String, Object>();
+		if (apkName!=null) {
+			if (appInfoService.APKNameexsit(apkName)) {
+				APKNameMap.put("APKName", "noexist");
+			}else {
+				APKNameMap.put("APKName", "exist");
+			}
+		}else{
+			APKNameMap.put("APKName", "empty");
+		}
+		return JSON.toJSONString(APKNameMap);
+	}
+	
 }

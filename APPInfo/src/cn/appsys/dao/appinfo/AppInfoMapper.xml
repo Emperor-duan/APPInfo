@@ -37,4 +37,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		 <if test="status!=0">and `status` = #{status}</if>
 		 <if test="flatformId!=0">and flatformId = #{flatformId}</if>
 	</select>
+	
+	<insert id="insAppInfo">
+		insert into app_info(softwareName,APKName,supportROM,interfaceLanguage,softwareSize,downloads,flatformId,categoryLevel1,categoryLevel2,categoryLevel3,`status`,appInfo,logoPicPath,createdBy,creationDate) 
+		values(#{softwareName},#{APKName},#{supportROM},#{interfaceLanguage},#{softwareSize},#{downloads},#{flatformId},#{categoryLevel1},#{categoryLevel2},#{categoryLevel3},#{status},#{appInfo},#{logoPicPath},#{createdBy},#{creationDate})   
+	</insert>
+	
+	<select id="APKNameexsit" resultType="AppInfo">
+		select * from app_info where APKName = #{APKName}
+	</select>
 </mapper>
