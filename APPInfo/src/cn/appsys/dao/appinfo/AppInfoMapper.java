@@ -21,4 +21,9 @@ public interface AppInfoMapper {
 			@Param("categoryLevel3")int categoryLevel3,
 			@Param("status")int status,
 			@Param("flatformId")int flatformId);
+	public int insAppInfo(AppInfo appInfo);
+	
+	public AppInfo APKNameexsit(@Param("APKName")String APKName);
+	
+	public AppInfo getAppInfo(@Param("id")int id);
 }

@@ -10,6 +10,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="statusName" column="statusName"/>
 		<result property="flatformName" column="flatformName"/>
 	</resultMap>
+	
+	<resultMap type="AppInfo" id="appstatusName">
+		<result property="statusName" column="statusName"/>
+	</resultMap>
+	
 	<select id="getAppInfoList" resultMap="appinfoList">
 		select (select categoryName from app_category cate where cate.id = info.categoryLevel1) as 'categoryLevel1Name',
 		(select categoryName from app_category cate where cate.id = info.categoryLevel2) as 'categoryLevel2Name',
@@ -36,5 +41,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		 <if test="categoryLevel3!=0">and categoryLevel3 = #{categoryLevel3}</if>
 		 <if test="status!=0">and `status` = #{status}</if>
 		 <if test="flatformId!=0">and flatformId = #{flatformId}</if>
+	</select>
+	
+	<insert id="insAppInfo">
+		insert into app_info(softwareName,APKName,supportROM,interfaceLanguage,softwareSize,downloads,flatformId,categoryLevel1,categoryLevel2,categoryLevel3,`status`,appInfo,logoPicPath,logoLocPath,createdBy,creationDate) 
+		values(#{softwareName},#{APKName},#{supportROM},#{interfaceLanguage},#{softwareSize},#{downloads},#{flatformId},#{categoryLevel1},#{categoryLevel2},#{categoryLevel3},#{status},#{appInfo},#{logoPicPath},#{logoLocPath},#{createdBy},#{creationDate})   
+	</insert>
+	
+	<select id="APKNameexsit" resultType="AppInfo">
+		select * from app_info where APKName = #{APKName}
+	</select>
+	
+	<select id="getAppInfo" resultType="AppInfo">
+		select info.*,(select valueName from data_dictionary where typeName = "APP状态" and valueId = info.`status`) AS 'statusName' from app_info info where id = #{id};
 	</select>
 </mapper>
