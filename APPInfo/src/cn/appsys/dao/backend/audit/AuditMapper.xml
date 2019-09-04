@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.appsys.dao.backend.audit.AuditMapper">
+
+	<!-- 查询所有信息 -->
+	<select id="appinfoList" resultType="AppInfo">
+		SELECT
+		a.id,softwareName,APKName,softwareSize,
+		(SELECT valueName FROM
+		data_dictionary WHERE typeCode = 'APP_FLATFORM' and
+		a.flatformId=valueId)as flatformName,
+		(select categoryName from
+		app_category c where c.id=a.categoryLevel1) as
+		categoryLevel1Name,
+		(select categoryName from app_category c where c.id=a.categoryLevel2)
+		as
+		categoryLevel2Name,
+		(select categoryName from app_category c where
+		c.id=a.categoryLevel3) as
+		categoryLevel3Name,
+		(SELECT valueName FROM
+		data_dictionary WHERE typeCode='APP_STATUS' AND
+		valueId=a.`status`) AS
+		statusName,downloads,(SELECT versionNo FROM
+		app_version WHERE appId=
+		a.versionId) AS versionNo
+		FROM app_info as a, data_dictionary as d
+		WHERE a.`status` = d.valueId and a.`status`=1
+		GROUP BY
+		softwareName LIMIT #{from},#{pageSize}
+	</select>
+
+	<!-- 查询总行数 -->
+	<select id="appinfoCount" resultType="Int">
+		SELECT COUNT(*) FROM
+		app_info WHERE `status`=1
+	</select>
+
+	<!-- 查询下拉列表的值 -->
+	<select id="categoryLevelList" resultType="AppInfo">
+	
+		<if test=" categoryLevel1List != null and categoryLevel1List !=''">
+			SELECT a.categoryLevel1,b.categoryName FROM app_info as a,app_category as b
+			WHERE b.id=a.categoryLevel1 GROUP BY categoryName
+		</if>
+		
+		<if test=" categoryLevel2List != null and categoryLevel1List !=''">
+		
+		</if>
+		
+		<if test=" categoryLevel3List != null and categoryLevel1List !=''">
+		
+		</if>
+	</select>
+
+</mapper>

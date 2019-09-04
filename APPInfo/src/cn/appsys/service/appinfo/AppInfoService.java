@@ -20,4 +20,5 @@ public interface AppInfoService {
 	public boolean updAppInfo(AppInfo appInfo);
 	
 	public boolean dellogo(int id);
+	
 }

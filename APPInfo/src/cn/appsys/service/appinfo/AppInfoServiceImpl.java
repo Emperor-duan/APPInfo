@@ -66,5 +66,4 @@ public class AppInfoServiceImpl implements AppInfoService {
 		}
 		return flag;
 	}
-
 }
