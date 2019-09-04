@@ -153,7 +153,7 @@ public class DevController {
 			int filesize = 500000;
 			if (attach.getSize()>filesize) {
 				request.setAttribute("fileUploadError", "上传大小不能超过500KB");
-				return "/flatform/app/appinfoadd";
+				return "/developer/appinfoadd";
 			}else if (prefix.equalsIgnoreCase("jpg")||prefix.equalsIgnoreCase("png")||prefix.equalsIgnoreCase("jpeg")||prefix.equalsIgnoreCase("pneg")) {
 				String fileName = System.currentTimeMillis() + RandomUtils.nextInt(1000000) + "_Personal.jpg";
 				File targetFile = new File(path,fileName);
@@ -165,7 +165,7 @@ public class DevController {
 				} catch (Exception e) {
 					e.printStackTrace();
 					request.setAttribute("fileUploadError", "文件上传失败！");
-					return "/flatform/app/appinfoadd";
+					return "/developer/appinfoadd";
 				}
 				logoLocPath = path + File.separator + fileName;
 				String s = logoLocPath.replace("\\",",/");
@@ -175,7 +175,7 @@ public class DevController {
 				}
 			}else {
 				request.setAttribute("fileUploadError", "文件格式不正确！");
-				return "/flatform/app/appinfoadd";
+				return "/developer/appinfoadd";
 			}
 		}
 		appInfo.setCreatedBy(((DevUser)session.getAttribute("devUserSession")).getId());
@@ -185,7 +185,7 @@ public class DevController {
 		if (appInfoService.insAppInfo(appInfo)) {
 			return "redirect:/dev/flatform/app/list";
 		}
-		return "/flatform/app/appinfoadd";
+		return "/developer/appinfoadd";
 	}
 	
 	@RequestMapping(value="/flatform/app/apkexist",method=RequestMethod.GET)
@@ -216,6 +216,60 @@ public class DevController {
 	@ResponseBody
 	public Object delfile(@RequestParam(value="id")String id,@RequestParam(value="flag")String flag){
 		HashMap<String, Object> delfilemap = new HashMap<String,Object>();
+		if (appInfoService.dellogo(Integer.parseInt(id))) {
+			delfilemap.put("result", "success");
+		}else {
+			delfilemap.put("result", "failed");
+		}
 		return JSON.toJSONString(delfilemap);
+	}
+	
+	@RequestMapping(value="/flatform/app/appinfomodifysave")
+	public String appinfomodifysave(AppInfo appInfo,HttpSession session,
+			HttpServletRequest request,
+			@RequestParam(value="attach",required=false) MultipartFile attach){
+		String logoPicPath="";
+		String logoLocPath="";
+		if (!attach.isEmpty()) {
+			String path = request.getSession().getServletContext().getRealPath("statics" + File.separator + "uploadfiles");
+			
+			String oldFileName = attach.getOriginalFilename();
+			String prefix = FilenameUtils.getExtension(oldFileName);
+			int filesize = 500000;
+			if (attach.getSize()>filesize) {
+				session.setAttribute("fileUploadError", "上传大小不能超过500KB");
+				return "redirect:/flatform/app/appinfomodify?id="+appInfo.getId();
+			}else if (prefix.equalsIgnoreCase("jpg")||prefix.equalsIgnoreCase("png")||prefix.equalsIgnoreCase("jpeg")||prefix.equalsIgnoreCase("pneg")) {
+				String fileName = System.currentTimeMillis() + RandomUtils.nextInt(1000000) + "_Personal.jpg";
+				File targetFile = new File(path,fileName);
+				if (!targetFile.exists()) {
+					targetFile.mkdirs();
+				}
+				try {
+					attach.transferTo(targetFile);
+				} catch (Exception e) {
+					e.printStackTrace();
+					session.setAttribute("fileUploadError", "文件上传失败！");
+					return "redirect:/flatform/app/appinfomodify?id="+appInfo.getId();
+				}
+				logoLocPath = path + File.separator + fileName;
+				String s = logoLocPath.replace("\\",",/");
+				String[] array = s.split(",");
+				for (int i = 3; i < array.length; i++) {
+					logoPicPath +=array[i];
+				}
+			}else {
+				session.setAttribute("fileUploadError", "文件格式不正确！");
+				return "redirect:/flatform/app/appinfomodify?id="+appInfo.getId();
+			}
+		}
+		appInfo.setModifyBy(((DevUser)session.getAttribute("devUserSession")).getId());
+		appInfo.setModifyDate(new Date());
+		appInfo.setLogoPicPath(logoPicPath);
+		appInfo.setLogoLocPath(logoLocPath);
+		if (appInfoService.updAppInfo(appInfo)) {
+			return "redirect:/dev/flatform/app/list";
+		}
+		return "redirect:/flatform/app/appinfomodify?id="+appInfo.getId();
 	}
 }

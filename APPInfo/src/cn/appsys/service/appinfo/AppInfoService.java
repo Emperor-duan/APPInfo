@@ -16,4 +16,8 @@ public interface AppInfoService {
 	public boolean APKNameexsit(String APKName);
 	
 	public AppInfo getAppInfo(int id);
+	
+	public boolean updAppInfo(AppInfo appInfo);
+	
+	public boolean dellogo(int id);
 }

@@ -26,4 +26,8 @@ public interface AppInfoMapper {
 	public AppInfo APKNameexsit(@Param("APKName")String APKName);
 	
 	public AppInfo getAppInfo(@Param("id")int id);
+	
+	public int updAppInfo(AppInfo appInfo);
+	
+	public int dellogo(@Param("id")int id);
 }
