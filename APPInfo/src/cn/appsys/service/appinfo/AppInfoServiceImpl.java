@@ -44,4 +44,45 @@ public class AppInfoServiceImpl implements AppInfoService {
 		return flag;
 	}
 
+	@Override
+	public AppInfo getAppInfo(int id) {
+		return appInfoMapper.getAppInfo(id);
+	}
+
+	@Override
+	public boolean updAppInfo(AppInfo appInfo) {
+		boolean flag = false;
+		if (appInfoMapper.updAppInfo(appInfo)>0) {
+			flag = true;
+		}
+		return flag;
+	}
+
+	@Override
+	public boolean dellogo(int id) {
+		boolean flag = false;
+		if (appInfoMapper.dellogo(id)>0) {
+			flag = true;
+		}
+		return flag;
+	}
+
+	@Override
+	public boolean updAversion(int versionId, int id) {
+		boolean flag = false;
+		if (appInfoMapper.updAversion(versionId, id)>0) {
+			flag = true;
+		}
+		return flag;
+	}
+
+	@Override
+	public boolean delAppInfo(int id) {
+		boolean flag = false;
+		if (appInfoMapper.delAppInfo(id)>0) {
+			flag = true;
+		}
+		return flag;
+	}
+	
 }

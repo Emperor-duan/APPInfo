@@ -9,14 +9,25 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="categoryLevel3Name" column="categoryLevel3Name"/> 
 		<result property="statusName" column="statusName"/>
 		<result property="flatformName" column="flatformName"/>
+		<result property="versionNo" column="versionNo"/>
 	</resultMap>
+	
+	<resultMap type="AppInfo" id="appstatusName">
+		<result property="categoryLevel1Name" column="categoryLevel1Name"/>
+		<result property="categoryLevel2Name" column="categoryLevel2Name"/> 
+		<result property="categoryLevel3Name" column="categoryLevel3Name"/> 
+		<result property="statusName" column="statusName"/>
+		<result property="flatformName" column="flatformName"/>
+	</resultMap>
+	
 	<select id="getAppInfoList" resultMap="appinfoList">
 		select (select categoryName from app_category cate where cate.id = info.categoryLevel1) as 'categoryLevel1Name',
 		(select categoryName from app_category cate where cate.id = info.categoryLevel2) as 'categoryLevel2Name',
 		(select categoryName from app_category cate where cate.id = info.categoryLevel3) as 'categoryLevel3Name',
 		info.*,
 		(select valueName from data_dictionary where typeName = "APP状态" and valueId = info.`status`) AS 'statusName',
-		(select valueName from data_dictionary where typeName = "所属平台" and valueId = info.flatformId) AS 'flatformName'
+		(select valueName from data_dictionary where typeName = "所属平台" and valueId = info.flatformId) AS 'flatformName',
+		(select versionNo from app_version where appId = info.id order by creationDate desc limit 1) as 'versionNo'
 		 from app_info info
 		 where 1=1
 		 <if test="softwareName!=null">and info.softwareName like "%"#{softwareName}"%"</if>
@@ -39,11 +50,54 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	</select>
 	
 	<insert id="insAppInfo">
-		insert into app_info(softwareName,APKName,supportROM,interfaceLanguage,softwareSize,downloads,flatformId,categoryLevel1,categoryLevel2,categoryLevel3,`status`,appInfo,logoPicPath,createdBy,creationDate) 
-		values(#{softwareName},#{APKName},#{supportROM},#{interfaceLanguage},#{softwareSize},#{downloads},#{flatformId},#{categoryLevel1},#{categoryLevel2},#{categoryLevel3},#{status},#{appInfo},#{logoPicPath},#{createdBy},#{creationDate})   
+		insert into app_info(softwareName,APKName,supportROM,interfaceLanguage,softwareSize,downloads,flatformId,categoryLevel1,categoryLevel2,categoryLevel3,`status`,appInfo,logoPicPath,logoLocPath,createdBy,creationDate) 
+		values(#{softwareName},#{APKName},#{supportROM},#{interfaceLanguage},#{softwareSize},#{downloads},#{flatformId},#{categoryLevel1},#{categoryLevel2},#{categoryLevel3},#{status},#{appInfo},#{logoPicPath},#{logoLocPath},#{createdBy},#{creationDate})   
 	</insert>
 	
 	<select id="APKNameexsit" resultType="AppInfo">
 		select * from app_info where APKName = #{APKName}
 	</select>
+	
+	<select id="getAppInfo" resultType="AppInfo">
+		select info.*,
+		(select categoryName from app_category cate where cate.id = info.categoryLevel1) as 'categoryLevel1Name',
+		(select categoryName from app_category cate where cate.id = info.categoryLevel2) as 'categoryLevel2Name',
+		(select categoryName from app_category cate where cate.id = info.categoryLevel3) as 'categoryLevel3Name',
+		(select valueName from data_dictionary where typeName = "所属平台" and valueId = info.flatformId) AS 'flatformName',
+		(select valueName from data_dictionary where typeName = "APP状态" and valueId = info.`status`) AS 'statusName' from app_info info where id = #{id};
+	</select>
+	
+	<update id="updAppInfo">
+		update app_info
+		<trim prefix="set" suffixOverrides="," suffix="where id = #{id}">
+			<if test="softwareName!=null">softwareName = #{softwareName},</if>
+			<if test="APKName!=null">APKName = #{APKName},</if>
+			<if test="supportROM!=null">supportROM = #{supportROM},</if>
+			<if test="interfaceLanguage!=null">interfaceLanguage = #{interfaceLanguage},</if>
+			<if test="softwareSize!=null">softwareSize = #{softwareSize},</if>
+			<if test="downloads!=null">downloads = #{downloads},</if>
+			<if test="flatformId!=null">flatformId = #{flatformId},</if>
+			<if test="categoryLevel1!=null">categoryLevel1 = #{categoryLevel1},</if>
+			<if test="categoryLevel2!=null">categoryLevel2 = #{categoryLevel2},</if>
+			<if test="categoryLevel3!=null">categoryLevel3 = #{categoryLevel3},</if>
+			<if test="status!=null">`status` = #{status},</if>
+			<if test="appInfo!=null">appInfo = #{appInfo},</if>
+			<if test="logoPicPath!=null">logoPicPath = #{logoPicPath},</if>
+			<if test="logoLocPath!=null">logoLocPath = #{logoLocPath},</if>
+			<if test="modifyBy!=null">modifyBy = #{modifyBy},</if>
+			<if test="modifyDate!=null">modifyDate = #{modifyDate}</if>
+		</trim>
+	</update>
+	
+	<update id="updAversion">
+		update app_info set versionId = #{versionId} where id = #{id};
+	</update>
+	
+	<update id="dellogo">
+		update app_info set logoPicPath = null,logoLocPath=null where id = #{id}
+	</update>
+	
+	<delete id="delAppInfo">
+		delete from app_info where id = #{id}
+	</delete>
 </mapper>
