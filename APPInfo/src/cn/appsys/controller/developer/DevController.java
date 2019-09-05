@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -27,10 +28,12 @@ import com.alibaba.fastjson.JSON;
 
 import cn.appsys.pojo.AppCategory;
 import cn.appsys.pojo.AppInfo;
+import cn.appsys.pojo.AppVersion;
 import cn.appsys.pojo.DataDictionary;
 import cn.appsys.pojo.DevUser;
 import cn.appsys.service.appcategory.AppCategoryService;
 import cn.appsys.service.appinfo.AppInfoService;
+import cn.appsys.service.appversion.AppversionService;
 import cn.appsys.service.datadictionary.DataDictionaryService;
 import cn.appsys.tools.Page;
 
@@ -46,6 +49,9 @@ public class DevController {
 	
 	@Autowired
 	private DataDictionaryService dataDictionaryService;
+	
+	@Autowired
+	private AppversionService appversionService;
 	
 	@RequestMapping("/logout")
 	public String logout(){
@@ -216,9 +222,20 @@ public class DevController {
 	@ResponseBody
 	public Object delfile(@RequestParam(value="id")String id,@RequestParam(value="flag")String flag){
 		HashMap<String, Object> delfilemap = new HashMap<String,Object>();
-		if (appInfoService.dellogo(Integer.parseInt(id))) {
-			delfilemap.put("result", "success");
-		}else {
+		if (flag.equals("json")) {
+			if (appInfoService.dellogo(Integer.parseInt(id))) {
+				delfilemap.put("result", "success");
+			}else {
+				delfilemap.put("result", "failed");
+			}
+			
+		}else if (flag.equals("apk")) {
+			if (appversionService.delapk(Integer.parseInt(id))) {
+				delfilemap.put("result", "success");
+			}else {
+				delfilemap.put("result", "failed");
+			}
+		}else{
 			delfilemap.put("result", "failed");
 		}
 		return JSON.toJSONString(delfilemap);
@@ -271,5 +288,205 @@ public class DevController {
 			return "redirect:/dev/flatform/app/list";
 		}
 		return "redirect:/flatform/app/appinfomodify?id="+appInfo.getId();
+	}
+	
+	@RequestMapping(value="/flatform/app/appversionadd")
+	public String appversionadd(@RequestParam(value="id")String id,Model model){
+		List<AppVersion> appVersionlist = appversionService.getAppversionList(Integer.parseInt(id));
+		AppVersion appVersion = new AppVersion();
+		appVersion.setAppId(Integer.parseInt(id));
+		model.addAttribute("appVersion",appVersion);
+		model.addAttribute("appVersionList",appVersionlist);
+		return "/developer/appversionadd";
+	}
+	
+	@RequestMapping(value="/flatform/app/addversionsave")
+	public String addversionsave(AppVersion appVersion,HttpSession session,
+			HttpServletRequest request,
+			@RequestParam(value="a_downloadLink",required = false) MultipartFile attach){
+		String downloadLink = null;
+		String apkLocPath = null;
+		String apkFileName = null;
+		if (!attach.isEmpty()) {
+			String path = request.getSession().getServletContext().getRealPath("statics" + File.separator + "uploadfiles");
+			
+			String oldFileName = attach.getOriginalFilename();
+			String prefix = FilenameUtils.getExtension(oldFileName);
+			int filesize = 500000000;
+			if (attach.getSize()>filesize) {
+				request.setAttribute("fileUploadError", "上传大小不能超过500MB");
+				return "/developer/appversionadd";
+			}else if (prefix.equalsIgnoreCase("apk")) {
+				String fileName = System.currentTimeMillis() + RandomUtils.nextInt(1000000) + appVersion.getVersionNo() + ".apk";
+				File targetFile = new File(path,fileName);
+				if (!targetFile.exists()) {
+					targetFile.mkdirs();
+				}
+				try {
+					attach.transferTo(targetFile);
+				} catch (Exception e) {
+					e.printStackTrace();
+					request.setAttribute("fileUploadError", "文件上传失败！");
+					return "/developer/appversionadd";
+				}
+				apkLocPath = path + File.separator + fileName;
+				String s = apkLocPath.replace("\\",",/");
+				String[] array = s.split(",");
+				downloadLink = "";
+				for (int i = 3; i < array.length; i++) {
+					downloadLink +=array[i];
+				}
+				String[] array1 = downloadLink.split("/");
+				apkFileName = array1[array1.length-1];
+				System.err.println(apkFileName+","+apkLocPath+","+downloadLink);
+			}else {
+				request.setAttribute("fileUploadError", "文件格式不正确！");
+				return "/developer/appversionadd";
+			}
+		}
+		appVersion.setCreatedBy(((DevUser)session.getAttribute("devUserSession")).getId());
+		appVersion.setCreationDate(new Date());
+		appVersion.setApkFileName(apkFileName);
+		appVersion.setApkLocPath(apkLocPath);
+		appVersion.setDownloadLink(downloadLink);
+		if (appversionService.insAppversion(appVersion)) {
+			AppVersion appVersion2 = appversionService.getAppVersionxing();
+			Integer versionId = appVersion2.getId();
+			Integer id = appVersion2.getAppId();
+			if (appInfoService.updAversion(versionId,id)) {
+				return "redirect:/dev/flatform/app/list";
+			}
+		}
+		return "/developer/appversionadd";
+	}
+	
+	@RequestMapping(value="/flatform/app/appversionmodify")
+	public String appversionmodify(@RequestParam(value="vid")String vid,@RequestParam(value="aid")String aid,Model model){
+		List<AppVersion> appVersionlist = appversionService.getAppversionList(Integer.parseInt(aid));
+		AppVersion appVersion = appversionService.getAppversion(Integer.parseInt(vid));
+		model.addAttribute("appVersion",appVersion);
+		model.addAttribute("appVersionList",appVersionlist);
+		return "/developer/appversionmodify";
+	}
+	
+	@RequestMapping(value="/flatform/app/appversionmodifysave",method=RequestMethod.POST)
+	public String appversionmodifysave(AppVersion appVersion,HttpSession session,
+			HttpServletRequest request,
+			@RequestParam(value="attach",required = false) MultipartFile attach){
+		String downloadLink = null;
+		String apkLocPath = null;
+		String apkFileName = null;
+		if (!attach.isEmpty()) {
+			String path = request.getSession().getServletContext().getRealPath("statics" + File.separator + "uploadfiles");
+			String oldFileName = attach.getOriginalFilename();
+			String prefix = FilenameUtils.getExtension(oldFileName);
+			int filesize = 500000000;
+			if (attach.getSize()>filesize) {
+				request.setAttribute("fileUploadError", "上传大小不能超过500MB");
+				return "redirect:/dev/flatform/app/appversionmodify?vid="+appVersion.getId()+"&aid="+appVersion.getAppId();
+			}else if (prefix.equalsIgnoreCase("apk")) {
+				String fileName = System.currentTimeMillis() + RandomUtils.nextInt(1000000) + appVersion.getVersionNo() + ".apk";
+				File targetFile = new File(path,fileName);
+				if (!targetFile.exists()) {
+					targetFile.mkdirs();
+				}
+				try {
+					attach.transferTo(targetFile);
+				} catch (Exception e) {
+					e.printStackTrace();
+					request.setAttribute("fileUploadError", "文件上传失败！");
+					return "redirect:/dev/flatform/app/appversionmodify?vid="+appVersion.getId()+"&aid="+appVersion.getAppId();
+				}
+				apkLocPath = path + File.separator + fileName;
+				String s = apkLocPath.replace("\\",",/");
+				String[] array = s.split(",");
+				downloadLink = "";
+				for (int i = 3; i < array.length; i++) {
+					downloadLink +=array[i];
+				}
+				String[] array1 = downloadLink.split("/");
+				apkFileName = array1[array1.length-1];
+			}else {
+				request.setAttribute("fileUploadError", "文件格式不正确！");
+				return "redirect:/dev/flatform/app/appversionmodify?vid="+appVersion.getId()+"&aid="+appVersion.getAppId();
+			}
+		}
+		appVersion.setCreatedBy(((DevUser)session.getAttribute("devUserSession")).getId());
+		appVersion.setCreationDate(new Date());
+		appVersion.setApkFileName(apkFileName);
+		appVersion.setApkLocPath(apkLocPath);
+		appVersion.setDownloadLink(downloadLink);
+		if (appversionService.updAppVersion(appVersion)) {
+			return "redirect:/dev/flatform/app/list";
+		}
+		return "redirect:/dev/flatform/app/appversionmodify?vid="+appVersion.getId()+"&aid="+appVersion.getAppId();
+	}
+	
+	@RequestMapping(value="flatform/app/appview/{id}")
+	public String appview(@PathVariable String id,Model model){
+		List<AppVersion> appVersionlist = appversionService.getAppversionList(Integer.parseInt(id));
+		AppInfo appInfo = appInfoService.getAppInfo(Integer.parseInt(id));
+		model.addAttribute("appInfo",appInfo);
+		model.addAttribute("appVersionList",appVersionlist);
+		return "/developer/appinfoview";
+	}
+	
+	@RequestMapping(value="flatform/app/delapp",method=RequestMethod.GET)
+	@ResponseBody
+	public Object delapp(String id){
+		HashMap<String, Object> app = new HashMap<String,Object>();
+		if (appInfoService.getAppInfo(Integer.parseInt(id))!=null) {
+			if (appversionService.delAppVersion(Integer.parseInt(id))) {
+				if (appInfoService.delAppInfo(Integer.parseInt(id))) {
+					app.put("delResult", "true");
+				}else {
+					app.put("delResult", "false");
+				}
+			}else {
+				if (appInfoService.delAppInfo(Integer.parseInt(id))) {
+					app.put("delResult", "true");
+				}else {
+					app.put("delResult", "false");
+				}
+			}
+		}else {
+			app.put("delResult", "notexist");
+		}
+		
+		return JSON.toJSONString(app);
+	}
+	
+	@RequestMapping(value="flatform/app/sale",method=RequestMethod.GET)
+	@ResponseBody
+	public Object sale(@RequestParam("id")String id){
+		System.err.println("1111");
+		HashMap<String, Object> appInfoMap = new HashMap<String,Object>();
+		AppInfo appInfo = appInfoService.getAppInfo(Integer.parseInt(id));
+		try {
+			if (appInfo!=null) {
+				appInfoMap.put("errorCode", "0");
+				System.err.println(appInfo.getStatus());
+				if (appInfo.getStatus() == 4) {
+					appInfo.setStatus(5);
+					if (appInfoService.updAppInfo(appInfo)) {
+						appInfoMap.put("resultMsg", "success");
+					}else{
+						appInfoMap.put("resultMsg", "failed");
+					}
+				}else if (appInfo.getStatus() == 5) {
+					appInfo.setStatus(4);
+					if (appInfoService.updAppInfo(appInfo)) {
+						appInfoMap.put("resultMsg", "success");
+					}else{
+						appInfoMap.put("resultMsg", "failed");
+					}
+				}
+			}else {
+				appInfoMap.put("errorCode", "param000001");
+			}
+		} catch (Exception e) {
+			appInfoMap.put("errorCode", "exception000001");
+		}
+		return JSON.toJSONString(appInfoMap);
 	}
 }
