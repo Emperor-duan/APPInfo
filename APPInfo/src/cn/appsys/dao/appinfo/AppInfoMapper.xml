@@ -9,10 +9,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		<result property="categoryLevel3Name" column="categoryLevel3Name"/> 
 		<result property="statusName" column="statusName"/>
 		<result property="flatformName" column="flatformName"/>
+		<result property="versionNo" column="versionNo"/>
 	</resultMap>
 	
 	<resultMap type="AppInfo" id="appstatusName">
+		<result property="categoryLevel1Name" column="categoryLevel1Name"/>
+		<result property="categoryLevel2Name" column="categoryLevel2Name"/> 
+		<result property="categoryLevel3Name" column="categoryLevel3Name"/> 
 		<result property="statusName" column="statusName"/>
+		<result property="flatformName" column="flatformName"/>
 	</resultMap>
 	
 	<select id="getAppInfoList" resultMap="appinfoList">
@@ -21,7 +26,8 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		(select categoryName from app_category cate where cate.id = info.categoryLevel3) as 'categoryLevel3Name',
 		info.*,
 		(select valueName from data_dictionary where typeName = "APP状态" and valueId = info.`status`) AS 'statusName',
-		(select valueName from data_dictionary where typeName = "所属平台" and valueId = info.flatformId) AS 'flatformName'
+		(select valueName from data_dictionary where typeName = "所属平台" and valueId = info.flatformId) AS 'flatformName',
+		(select versionNo from app_version where appId = info.id order by creationDate desc limit 1) as 'versionNo'
 		 from app_info info
 		 where 1=1
 		 <if test="softwareName!=null">and info.softwareName like "%"#{softwareName}"%"</if>
@@ -53,7 +59,12 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 	</select>
 	
 	<select id="getAppInfo" resultType="AppInfo">
-		select info.*,(select valueName from data_dictionary where typeName = "APP状态" and valueId = info.`status`) AS 'statusName' from app_info info where id = #{id};
+		select info.*,
+		(select categoryName from app_category cate where cate.id = info.categoryLevel1) as 'categoryLevel1Name',
+		(select categoryName from app_category cate where cate.id = info.categoryLevel2) as 'categoryLevel2Name',
+		(select categoryName from app_category cate where cate.id = info.categoryLevel3) as 'categoryLevel3Name',
+		(select valueName from data_dictionary where typeName = "所属平台" and valueId = info.flatformId) AS 'flatformName',
+		(select valueName from data_dictionary where typeName = "APP状态" and valueId = info.`status`) AS 'statusName' from app_info info where id = #{id};
 	</select>
 	
 	<update id="updAppInfo">
@@ -78,7 +89,15 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		</trim>
 	</update>
 	
+	<update id="updAversion">
+		update app_info set versionId = #{versionId} where id = #{id};
+	</update>
+	
 	<update id="dellogo">
 		update app_info set logoPicPath = null,logoLocPath=null where id = #{id}
 	</update>
+	
+	<delete id="delAppInfo">
+		delete from app_info where id = #{id}
+	</delete>
 </mapper>
