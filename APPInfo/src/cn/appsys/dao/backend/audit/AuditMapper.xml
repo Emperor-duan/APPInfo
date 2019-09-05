@@ -24,12 +24,16 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		data_dictionary WHERE typeCode='APP_STATUS' AND
 		valueId=a.`status`) AS
 		statusName,downloads,(SELECT versionNo FROM
-		app_version WHERE appId=
-		a.versionId) AS versionNo
+		app_version WHERE id=
+		a.versionId) AS versionNo ,a.`status`,a.versionId
 		FROM app_info as a, data_dictionary as d
 		WHERE a.`status` = d.valueId and a.`status`=1
+		<if test="softwareName != null and softwareName != '' or flatformName != null and flatformName != '' or categoryLevel1Name != null and categoryLevel1Name != '' or categoryLevel2Name != null and categoryLevel2Name != '' or categoryLevel3Name != null and categoryLevel3Name != '' ">
+		and softwareName LIKE CONCAT('%',#{softwareName},'%') and  a.flatformId LIKE CONCAT('%',#{flatformName},'%') and categoryLevel1 LIKE CONCAT('%',#{categoryLevel1Name},'%') and categoryLevel2 LIKE CONCAT('%',#{categoryLevel2Name},'%') and categoryLevel3 LIKE CONCAT('%',#{categoryLevel3Name},'%')
+	    </if>
 		GROUP BY
-		softwareName LIMIT #{from},#{pageSize}
+		softwareName
+		LIMIT #{from},#{pageSize}
 	</select>
 
 	<!-- 查询总行数 -->
@@ -38,21 +42,49 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 		app_info WHERE `status`=1
 	</select>
 
-	<!-- 查询下拉列表的值 -->
-	<select id="categoryLevelList" resultType="AppInfo">
-	
-		<if test=" categoryLevel1List != null and categoryLevel1List !=''">
-			SELECT a.categoryLevel1,b.categoryName FROM app_info as a,app_category as b
-			WHERE b.id=a.categoryLevel1 GROUP BY categoryName
-		</if>
-		
-		<if test=" categoryLevel2List != null and categoryLevel1List !=''">
-		
-		</if>
-		
-		<if test=" categoryLevel3List != null and categoryLevel1List !=''">
-		
-		</if>
+	<!-- 查询所属平台 -->
+	<select id="pingtaiList" resultType="DataDictionary">
+		SELECT valueId,valueName
+		FROM data_dictionary WHERE typeName='所属平台'
 	</select>
 
+	<!-- 查询一级菜单 -->
+	<select id="yijicaidanList" resultType="AppCategory">
+		SELECT B.id
+		,A.categoryLevel1 as parentId,B.categoryName FROM app_info AS
+		A,app_category AS B WHERE A.categoryLevel1 = B.id GROUP BY
+		B.categoryName
+	</select>
+
+	<!-- 查询二级菜单 -->
+	<select id="categoryLevel2List" resultType="AppCategory">
+		select
+		id,categoryCode,categoryName from app_category WHERE parentId=#{categoryLevel1}
+	</select>
+    
+    <!-- 查询三级菜单  -->
+    <select id="categoryLevel3List" resultType="AppCategory">
+        select
+		id,categoryCode,categoryName from app_category WHERE parentId=#{categoryLevel2}
+    </select>
+    
+    <!-- 查询基础信息  -->
+    <select id="appinfoList1" resultType="AppInfo">
+      SELECT id,softwareName,APKName,supportROM,interfaceLanguage,softwareSize,downloads,
+     (SELECT valueName FROM data_dictionary WHERE typeName='所属平台' and valueId=a.`status`) as flatformName,
+     (select categoryName from app_category c where c.id=a.categoryLevel1) as categoryLevel1Name,
+     (select categoryName from app_category c where c.id=a.categoryLevel2) as categoryLevel2Name,
+    (select categoryName from app_category c where c.id=a.categoryLevel3) as categoryLevel3Name,
+    (SELECT valueName FROM data_dictionary WHERE typeCode='APP_STATUS' AND valueId=a.`status`) AS statusName,
+    appInfo,logoPicPath
+    FROM app_info as a  WHERE id = #{id}
+    </select>
+    
+    <select id="appinfoList2" resultType="AppVersion">
+     SELECT id,versionNo,versionSize,versionInfo,apkFileName,downloadLink FROM app_version WHERE id=#{id}   
+    </select>
+    
+    <update id="xiugai" parameterType="AppInfo">
+    UPDATE app_info SET `status`=#{status} WHERE id=#{id}
+    </update>
 </mapper>

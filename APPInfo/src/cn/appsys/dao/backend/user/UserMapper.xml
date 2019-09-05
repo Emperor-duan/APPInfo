@@ -6,7 +6,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 <mapper namespace="cn.appsys.dao.backend.user.UserMapper">
 	<!-- 查询所有信息 -->
 	<select id="getuser" resultType="BackendUser">	
-		SELECT a.*,b.typeName as userTypeName FROM backend_user as a,data_dictionary as b 
+		SELECT a.*,b.valueName as userTypeName FROM backend_user as a,data_dictionary as b 
 	    WHERE a.userType=b.id AND a.userCode=#{userCode}
 	</select>
 	
