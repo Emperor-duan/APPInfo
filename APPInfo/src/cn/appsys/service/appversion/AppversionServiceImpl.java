@@ -6,9 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 import cn.appsys.dao.appversion.AppversionMapper;
 import cn.appsys.pojo.AppVersion;
+import org.springframework.stereotype.Service;
 
-public class AppversionServiceImpl implements AppversionService{
-  
+import cn.appsys.dao.appversion.AppversionMapper;
+import cn.appsys.pojo.AppVersion;
+
+@Service("appversionService")
+public class AppversionServiceImpl implements AppversionService {
 	@Autowired
 	AppversionMapper appversionMapper;
 

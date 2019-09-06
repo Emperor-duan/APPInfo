@@ -7,7 +7,7 @@ import org.apache.ibatis.annotations.Param;
 import cn.appsys.pojo.AppVersion;
 
 public interface AppversionMapper {
-public List<AppVersion> getAppVersionList(@Param("id")int id);
+	public List<AppVersion> getAppVersionList(@Param("id")int id);
 	
 	public int insAppVersion(AppVersion appVersion);
 	

@@ -5,7 +5,7 @@ import java.util.List;
 import cn.appsys.pojo.AppVersion;
 
 public interface AppversionService {
-public List<AppVersion> getAppversionList(int id);
+	public List<AppVersion> getAppversionList(int id);
 	
 	public boolean insAppversion(AppVersion appVersion);
 	
