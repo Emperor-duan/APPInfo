@@ -459,7 +459,6 @@ public class DevController {
 	@RequestMapping(value="flatform/app/sale",method=RequestMethod.GET)
 	@ResponseBody
 	public Object sale(@RequestParam("id")String id){
-		System.err.println("1111");
 		HashMap<String, Object> appInfoMap = new HashMap<String,Object>();
 		AppInfo appInfo = appInfoService.getAppInfo(Integer.parseInt(id));
 		try {
