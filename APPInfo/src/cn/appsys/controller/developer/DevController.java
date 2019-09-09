@@ -222,7 +222,7 @@ public class DevController {
 	@ResponseBody
 	public Object delfile(@RequestParam(value="id")String id,@RequestParam(value="flag")String flag){
 		HashMap<String, Object> delfilemap = new HashMap<String,Object>();
-		if (flag.equals("json")) {
+		if (flag.equals("jpg")) {
 			if (appInfoService.dellogo(Integer.parseInt(id))) {
 				delfilemap.put("result", "success");
 			}else {
@@ -459,7 +459,6 @@ public class DevController {
 	@RequestMapping(value="flatform/app/sale",method=RequestMethod.GET)
 	@ResponseBody
 	public Object sale(@RequestParam("id")String id){
-		System.err.println("1111");
 		HashMap<String, Object> appInfoMap = new HashMap<String,Object>();
 		AppInfo appInfo = appInfoService.getAppInfo(Integer.parseInt(id));
 		try {
